@@ -93,7 +93,7 @@ def train_cnn_a(train_loader, val_loader, ckpt_path: str, log) -> float:
 
     log(f"  Params          : {model.n_params():,}")
     log(f"  Loss            : CrossEntropyLoss (no smoothing)")
-    log(f"  Augmentation    : RandomCrop + HorizontalFlip")
+    log(f"  Augmentation    : RandomCrop + HorizontalFlip + ColorJitter")
     log(f"  Optimizer       : AdamW  lr={LR}  wd={WEIGHT_DECAY}")
     log()
     _print_epoch_header(log)

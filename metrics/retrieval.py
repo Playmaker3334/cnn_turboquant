@@ -30,16 +30,31 @@ def mean_reciprocal_rank(X: np.ndarray, Xr: np.ndarray) -> float:
 
 
 def map_at_k(X: np.ndarray, Xr: np.ndarray, y: np.ndarray, k: int = 10) -> float:
-    """Mean Average Precision at k using class labels as relevance signal."""
+    """
+    Mean Average Precision at k using class labels as relevance signal.
+
+        AP@k = (1 / min(R, k)) * sum_{j=1..k} P(j) * rel(j)
+
+    where R is the total number of relevant items in the collection
+    (excluding the query itself), not the number retrieved in top-k.
+    Using `hits` in the denominator (as in the previous version) biases
+    the metric upward when hits < min(R, k).
+    """
     scores = Xr @ Xr.T
     np.fill_diagonal(scores, -np.inf)
     order = np.argsort(-scores, axis=1)[:, :k]
+
+    # Total relevant items per query (excluding the query itself)
+    class_counts = np.bincount(y)
+    R_total      = class_counts[y] - 1  # shape (N,)
+
     aps = []
     for i in range(len(y)):
         hits, prec_sum = 0, 0.0
-        for j, idx in enumerate(order[i]):
-            if y[idx] == y[i]:
+        for j, idx_j in enumerate(order[i]):
+            if y[idx_j] == y[i]:
                 hits     += 1
                 prec_sum += hits / (j + 1)
-        aps.append(prec_sum / min(hits, k) if hits > 0 else 0.0)
+        denom = min(int(R_total[i]), k)
+        aps.append(prec_sum / denom if denom > 0 else 0.0)
     return float(np.mean(aps))
